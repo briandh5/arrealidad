@@ -14,7 +14,9 @@ const RETO = 'https://101greatideas.vercel.app'
 const VW = 1280
 const VH = 720
 const ANCLA = { x: 617, y: 215 }
-const SEG_CARD = 9000
+// La ficha se queda unos segundos y el video se repite solo; tras VUELTAS reproducciones aparece el botón de repetir
+const SEG_CARD = 2500
+const VUELTAS = 5
 
 // Fotos con licencia Unsplash (uso libre); se cargan desde unsplash.com
 const unsplash = (id) => `https://unsplash.com/photos/${id}/download?w=1200`
@@ -223,7 +225,8 @@ function Hero() {
   const [fase, setFase] = useState('video')
   const [cerrada, setCerrada] = useState(false)
   const [pausado, setPausado] = useState(false)
-  const ocupado = useRef(false)
+  const [terminado, setTerminado] = useState(false)
+  const vueltas = useRef(0)
 
   // Posición del edificio en pantalla con object-fit: cover
   const s = Math.max(w / VW, h / VH) || 1
@@ -236,14 +239,25 @@ function Hero() {
     setFase('ficha')
   }
 
+  // Si el navegador no reproduce el video, se queda la ficha con el botón para intentarlo de nuevo
+  const sinVideo = () => {
+    setTerminado(true)
+    mostrarFicha()
+  }
+
+  const alTerminar = () => {
+    vueltas.current += 1
+    if (vueltas.current >= VUELTAS) setTerminado(true)
+    mostrarFicha()
+  }
+
   const repetir = () => {
     const v = video.current
-    ocupado.current = false
     setCerrada(false)
     setFase('video')
     if (v) {
       v.currentTime = 0
-      v.play().catch(() => mostrarFicha())
+      v.play().catch(sinVideo)
       setPausado(false)
     }
   }
@@ -251,19 +265,26 @@ function Hero() {
   useEffect(() => {
     if (reducido) {
       setFase('ficha')
-      setPausado(true)
+      setTerminado(true)
       return
     }
-    video.current?.play().catch(() => mostrarFicha())
+    video.current?.play().catch(sinVideo)
   }, [reducido])
 
   useEffect(() => {
-    if (fase !== 'ficha' || pausado || reducido) return
-    const t = setTimeout(() => {
-      if (!ocupado.current) repetir()
-    }, SEG_CARD)
+    if (fase !== 'ficha' || pausado || terminado) return
+    const t = setTimeout(repetir, SEG_CARD)
     return () => clearTimeout(t)
-  }, [fase, pausado, reducido])
+  }, [fase, pausado, terminado])
+
+  // Al usar la ficha se detiene la repetición para no quitársela a la persona
+  const usarFicha = () => setTerminado(true)
+
+  const verDeNuevo = () => {
+    vueltas.current = VUELTAS - 1
+    setTerminado(false)
+    repetir()
+  }
 
   const alternarPausa = () => {
     const v = video.current
@@ -291,7 +312,7 @@ function Hero() {
         muted
         playsInline
         preload="auto"
-        onEnded={mostrarFicha}
+        onEnded={alTerminar}
         aria-label="Video: una mano señala el skyline de Chicago desde la orilla congelada del lago y la app reconoce el edificio del centro"
       />
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(4,18,32,.55)_0%,rgba(4,18,32,0)_22%,rgba(4,18,32,0)_55%,rgba(4,18,32,.7)_100%)]" />
@@ -330,11 +351,8 @@ function Hero() {
               ? { left: cardX, top: cardY, width: cardW }
               : { left: 'max(16px, env(safe-area-inset-left, 0px))', right: 'max(16px, env(safe-area-inset-right, 0px))', bottom: 16 }
           }
-          onPointerEnter={() => (ocupado.current = true)}
-          onPointerLeave={() => (ocupado.current = false)}
-          onFocus={() => (ocupado.current = true)}
         >
-          <FichaLugar onCerrar={() => setCerrada(true)} onInteractuar={() => (ocupado.current = true)} />
+          <FichaLugar onCerrar={() => { usarFicha(); setCerrada(true) }} onInteractuar={usarFicha} />
         </div>
       )}
 
@@ -360,12 +378,16 @@ function Hero() {
       )}
 
       <div className="absolute right-[max(16px,env(safe-area-inset-right,0px))] top-16 flex gap-2 min-[900px]:top-auto min-[900px]:bottom-8">
+        {!terminado && (
         <button type="button" onClick={alternarPausa} aria-label={pausado ? 'Reanudar demo' : 'Pausar demo'} className="grid h-9 w-9 place-items-center rounded-full bg-black/30 text-white backdrop-blur hover:bg-black/45">
           {pausado ? <Play size={16} /> : <Pause size={16} />}
         </button>
-        <button type="button" onClick={repetir} aria-label="Repetir demo" className="grid h-9 w-9 place-items-center rounded-full bg-black/30 text-white backdrop-blur hover:bg-black/45">
-          <RotateCcw size={16} />
-        </button>
+        )}
+        {terminado && (
+          <button type="button" onClick={verDeNuevo} aria-label="Ver de nuevo" className="entra inline-flex h-9 items-center gap-1.5 rounded-full bg-black/40 px-3 font-display text-[13px] font-medium text-white backdrop-blur hover:bg-black/55">
+            <RotateCcw size={15} /> Ver de nuevo
+          </button>
+        )}
       </div>
     </header>
   )
