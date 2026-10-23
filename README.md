@@ -19,4 +19,4 @@ Stack: Vite + React 19 + Tailwind 3 + Lucide.
 
 ## Créditos
 
-Fotos bajo la [Licencia Unsplash](https://unsplash.com/license): Priscilla Du Preez, Ben Hershey y Brady Jordan. Concepto independiente, no afiliado a Google.
+Fotos bajo la [Licencia Unsplash](https://unsplash.com/license): Moriah Bender, David Vives y Brady Jordan. Concepto independiente, no afiliado a Google.

@@ -27,7 +27,7 @@ const HOY = [
     texto: 'Apunta a un restaurante y ve su calificación, el tiempo de espera y los platillos más pedidos. Elige hora y personas sin salir de la cámara.',
     puntos: ['Mesas disponibles en tiempo real', 'Menú con fotos de otros comensales', 'Confirmación en tu calendario'],
     ar: { icon: Clock, texto: 'Mesa para 4 · 20:30', accion: 'Reservar' },
-    foto: { id: 'W3SEyZODn8U', autor: 'Priscilla Du Preez', alt: 'Grupo de amigos platicando y comiendo en un restaurante' },
+    foto: { id: 'i8BuLYg7Ryk', autor: 'Moriah Bender', alt: 'Fachada de un restaurante con su letrero sobre la puerta' },
   },
   {
     icon: Clapperboard,
@@ -36,7 +36,7 @@ const HOY = [
     texto: 'Señala un cine, un teatro o un estadio y aparecen las próximas funciones, los asientos libres y el precio. Pagas con Wallet en dos toques.',
     puntos: ['Cartelera y horarios del día', 'Mapa de asientos en AR', 'Boletos guardados en Wallet'],
     ar: { icon: Ticket, texto: 'Función 21:15 · Sala 4', accion: '2 boletos' },
-    foto: { id: 'K61C1XrwTWs', autor: 'Ben Hershey', alt: 'Marquesina iluminada de un cine de barrio' },
+    foto: { id: 'P17cUmurgiQ', autor: 'David Vives', alt: 'Fachada exterior del Yankee Stadium en el Bronx, Nueva York' },
   },
   {
     icon: Camera,
@@ -121,14 +121,14 @@ function FichaLugar({ onCerrar, onInteractuar }) {
     <div className="w-full overflow-hidden rounded-[28px] bg-surface text-ink shadow-e3 font-sans">
       <div className="relative h-[108px]">
         <img src={lugar} alt="Vista del edificio seleccionado desde la orilla del lago" className="h-full w-full object-cover" />
-        <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-surface/90 px-2.5 py-1 text-[12px] font-medium text-ink font-display">
+        <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-[12px] font-medium text-ink font-display">
           <ScanLine size={13} className="text-primary" /> Reconocido en AR
         </span>
         <button
           type="button"
           onClick={onCerrar}
           aria-label="Cerrar ficha"
-          className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-surface/90 text-ink hover:bg-surface"
+          className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-white/90 text-ink hover:bg-white"
         >
           <X size={18} />
         </button>
@@ -393,11 +393,11 @@ function Tarjeta({ item }) {
     <article className="flex min-w-0 flex-col overflow-hidden rounded-[24px] border border-line/70 bg-surface transition-shadow hover:shadow-e3">
       <div className="relative aspect-[4/3] w-full max-w-full overflow-hidden bg-surface2">
         <Foto foto={item.foto} icon={Icon} />
-        <div className="absolute inset-x-3 bottom-3 flex items-center gap-2 rounded-full bg-surface/95 py-1.5 pl-2 pr-1.5 shadow-e3 backdrop-blur">
+        <div className="absolute inset-x-3 bottom-3 flex items-center gap-2 rounded-full bg-black/55 py-1.5 pl-2 pr-1.5 shadow-e3 backdrop-blur-md">
           <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-tonal text-onTonal">
             <ArIcon size={15} />
           </span>
-          <span className="min-w-0 flex-1 truncate font-display text-[14px] font-medium text-ink">{ar.texto}</span>
+          <span className="min-w-0 flex-1 truncate font-display text-[14px] font-medium text-white">{ar.texto}</span>
           <span className="shrink-0 rounded-full bg-primary px-3 py-1 font-display text-[13px] font-medium text-white">{ar.accion}</span>
         </div>
       </div>
@@ -524,7 +524,7 @@ export default function MiraAR() {
             <a className="underline underline-offset-2 hover:text-primary" href="https://unsplash.com/license" target="_blank" rel="noreferrer">
               Licencia Unsplash
             </a>
-            : Priscilla Du Preez, Ben Hershey y Brady Jordan.
+            : Moriah Bender, David Vives y Brady Jordan.
           </p>
         </div>
       </footer>
