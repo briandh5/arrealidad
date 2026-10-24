@@ -1,6 +1,6 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
-  ArrowUpRight, Bookmark, Camera, Check, Clapperboard, Clock, Globe,
+  ArrowUpRight, Bookmark, ChevronLeft, ChevronRight, Camera, Check, Clapperboard, Clock, Globe,
   MapPin, Minus, Navigation, Pause, Play, Plus, RotateCcw, ScanLine, Share2, Star,
   Ticket, UtensilsCrossed, X,
 } from 'lucide-react'
@@ -56,6 +56,109 @@ const PASOS = [
   { icon: MapPin, titulo: 'Toca', texto: 'Aparece la ficha del lugar: horarios, reseñas, fotos y lo que puedes hacer ahí.' },
   { icon: Check, titulo: 'Resuelve', texto: 'Reserva, compra o comparte en el mismo momento, sin cambiar de app.' },
 ]
+
+const SLIDES = [
+  'El problema: dejar de girar el celular para saber dónde estás',
+  'El mapa está en tu mano, la calle está enfrente',
+  'Cuatro momentos donde el mapa se queda corto',
+  'Menos pasos entre ver y entender',
+  'La ficha aparece encima del edificio',
+  'Cuatro reglas de experiencia de usuario',
+  'El flujo: apunta, toca y resuelve',
+  'Cada lugar decide qué mostrar',
+  'Ejemplos de fichas personalizadas',
+  'Promociones útiles, nunca una calle llena de anuncios',
+  'Cómo medirlo con usuarios',
+  'Me encantaría ser parte del proceso',
+].map((alt, i) => ({ src: `slides/${String(i + 1).padStart(2, '0')}.webp`, alt }))
+const SEG_SLIDE = 4500
+
+// Avanza solo hasta que la persona usa las flechas, los puntos o desliza
+function Carrusel() {
+  const pista = useRef(null)
+  const [actual, setActual] = useState(0)
+  const [auto, setAuto] = useState(() => typeof matchMedia === 'undefined' || !matchMedia('(prefers-reduced-motion: reduce)').matches)
+  const total = SLIDES.length
+
+  const ir = useCallback((i) => {
+    const el = pista.current
+    if (!el) return
+    const n = (i + total) % total
+    el.scrollTo({ left: n * el.clientWidth, behavior: 'smooth' })
+  }, [total])
+
+  const manual = (i) => {
+    setAuto(false)
+    ir(i)
+  }
+
+  useEffect(() => {
+    if (!auto) return
+    const t = setTimeout(() => ir(actual + 1), SEG_SLIDE)
+    return () => clearTimeout(t)
+  }, [auto, actual, ir])
+
+  const alDesplazar = () => {
+    const el = pista.current
+    if (el) setActual(Math.round(el.scrollLeft / el.clientWidth))
+  }
+
+  const detener = () => setAuto(false)
+
+  return (
+    <section className="grid gap-6" aria-roledescription="carrusel" aria-label="Presentación de Mira AR">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="grid gap-2">
+          <p className="font-display text-[13px] font-medium uppercase tracking-[0.12em] text-primary">La presentación</p>
+          <h3 className="font-display text-[28px] font-normal leading-9 text-ink">El proyecto en 12 slides</h3>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="mr-1 font-display text-[14px] tabular-nums text-ink2">
+            {actual + 1} / {total}
+          </span>
+          <button type="button" onClick={() => manual(actual - 1)} aria-label="Slide anterior" className="grid h-10 w-10 place-items-center rounded-full border border-line text-ink hover:bg-surface2">
+            <ChevronLeft size={20} />
+          </button>
+          <button type="button" onClick={() => manual(actual + 1)} aria-label="Slide siguiente" className="grid h-10 w-10 place-items-center rounded-full border border-line text-ink hover:bg-surface2">
+            <ChevronRight size={20} />
+          </button>
+        </div>
+      </div>
+      <div
+        ref={pista}
+        onScroll={alDesplazar}
+        onPointerDown={detener}
+        onWheel={detener}
+        onKeyDown={detener}
+        tabIndex={0}
+        className="flex snap-x snap-mandatory overflow-x-auto rounded-[24px] border border-line/70 bg-surface2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {SLIDES.map((s, i) => (
+          <img
+            key={s.src}
+            src={s.src}
+            alt={`Slide ${i + 1}: ${s.alt}`}
+            loading={i < 2 ? 'eager' : 'lazy'}
+            draggable={false}
+            className="aspect-video w-full max-w-full shrink-0 snap-center select-none object-cover"
+          />
+        ))}
+      </div>
+      <div className="flex justify-center gap-1.5">
+        {SLIDES.map((s, i) => (
+          <button
+            key={s.src}
+            type="button"
+            onClick={() => manual(i)}
+            aria-label={`Ir a la slide ${i + 1}`}
+            aria-current={i === actual}
+            className={`h-2 rounded-full transition-all ${i === actual ? 'w-6 bg-primary' : 'w-2 bg-line hover:bg-ink2'}`}
+          />
+        ))}
+      </div>
+    </section>
+  )
+}
 
 function useMedida(ref) {
   const [m, setM] = useState({ w: 0, h: 0 })
@@ -506,6 +609,8 @@ export default function MiraAR() {
           texto="Tres acciones que hoy requieren buscar, abrir otra app y volver. Con Mira AR suceden sobre la vista de la cámara."
           items={HOY}
         />
+
+        <Carrusel />
 
         <section className="overflow-hidden rounded-[32px] bg-surface2">
           <div className="grid gap-8 p-6 sm:p-10 md:grid-cols-[1.4fr_1fr] md:items-center">

@@ -1,8 +1,8 @@
 // Empaqueta la app en un solo HTML (React incluido) para la vista previa en Artifacts.
-// El video se publica aparte como hero.mp4 junto al HTML.
+// El video (hero.mp4) y las slides (slides/) se publican aparte junto al HTML.
 import { build } from 'esbuild'
 import { execSync } from 'node:child_process'
-import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { copyFileSync, cpSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 
 mkdirSync('dist-artifact', { recursive: true })
 execSync('npx tailwindcss -i src/index.css -o dist-artifact/app.css --minify', { stdio: 'inherit' })
@@ -23,4 +23,5 @@ const html = readFileSync('index.html', 'utf8')
   .replace('</head>', () => `<meta name="claude:viewport-fit-sides" content="cover" /><style>${css}</style></head>`)
 writeFileSync('dist-artifact/mira-ar.html', html)
 copyFileSync('public/hero.mp4', 'dist-artifact/hero.mp4')
+cpSync('public/slides', 'dist-artifact/slides', { recursive: true })
 console.log('dist-artifact/mira-ar.html listo')
