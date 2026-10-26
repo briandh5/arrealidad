@@ -69,7 +69,6 @@ const SLIDES = [
   'Ejemplos de fichas personalizadas',
   'Promociones útiles, nunca una calle llena de anuncios',
   'Cómo medirlo con usuarios',
-  'Me encantaría ser parte del proceso',
 ].map((alt, i) => ({ src: `slides/${String(i + 1).padStart(2, '0')}.webp`, alt }))
 const SEG_SLIDE = 4500
 
@@ -110,7 +109,7 @@ function Carrusel() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="grid gap-2">
           <p className="font-display text-[13px] font-medium uppercase tracking-[0.12em] text-primary">La presentación</p>
-          <h3 className="font-display text-[28px] font-normal leading-9 text-ink">El proyecto en 12 slides</h3>
+          <h3 className="font-display text-[28px] font-normal leading-9 text-ink">El proyecto en 11 slides</h3>
         </div>
         <div className="flex items-center gap-2">
           <span className="mr-1 font-display text-[14px] tabular-nums text-ink2">
