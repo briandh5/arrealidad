@@ -164,7 +164,7 @@ function CasoXR() {
   return (
     <div className="grid overflow-hidden rounded-[24px] border border-line/70 bg-surface md:grid-cols-[1.25fr_1fr]">
       <div className="relative aspect-video w-full max-w-full md:aspect-auto md:min-h-[340px]">
-        <img src={xrNoche} alt="Skyline de Chicago de noche desde la orilla del lago, escena usada para probar la legibilidad en lentes" className="absolute inset-0 h-full w-full object-cover" />
+        <img src={xrNoche} alt="Skyline de Chicago iluminado de noche desde la orilla nevada del lago" className="absolute inset-0 h-full w-full object-cover" />
         <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-black/55 px-3 py-1.5 font-display text-[13px] font-medium text-white backdrop-blur-md">
           <ScanLine size={14} /> Android XR
         </span>
