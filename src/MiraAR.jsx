@@ -6,7 +6,9 @@ import {
 } from 'lucide-react'
 import lugar from './assets/lugar.jpg'
 import poster from './assets/poster.jpg'
+import xrNoche from './assets/xr-noche.jpg'
 
+const FIGMA_XR = 'https://www.figma.com/community/file/1698455080528285372'
 const LINKEDIN = 'https://www.linkedin.com/in/briandh5/'
 const RETO = 'https://101greatideas.vercel.app'
 
@@ -105,12 +107,9 @@ function Carrusel() {
   const detener = () => setAuto(false)
 
   return (
-    <section className="grid gap-6" aria-roledescription="carrusel" aria-label="Presentación de Mira AR">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="grid gap-2">
-          <p className="font-display text-[13px] font-medium uppercase tracking-[0.12em] text-primary">La presentación</p>
-          <h3 className="font-display text-[28px] font-normal leading-9 text-ink">El proyecto en 11 slides</h3>
-        </div>
+    <div className="grid gap-4" aria-roledescription="carrusel" aria-label="Presentación de UX de Mira AR">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <p className="text-[15px] text-ink2">El problema de ubicarse con el mapa y cómo lo resuelve Mira AR, en 11 slides.</p>
         <div className="flex items-center gap-2">
           <span className="mr-1 font-display text-[14px] tabular-nums text-ink2">
             {actual + 1} / {total}
@@ -154,6 +153,87 @@ function Carrusel() {
             className={`h-2 rounded-full transition-all ${i === actual ? 'w-6 bg-primary' : 'w-2 bg-line hover:bg-ink2'}`}
           />
         ))}
+      </div>
+    </div>
+  )
+}
+
+// Caso de estudio para lentes Android XR, publicado en Figma Community
+function CasoXR() {
+  const temas = ['Vistazo en lentes', 'Ficha expandida en headset', 'Legibilidad de día y de noche', 'Sistema visual y motion']
+  return (
+    <div className="grid overflow-hidden rounded-[24px] border border-line/70 bg-surface md:grid-cols-[1.25fr_1fr]">
+      <div className="relative aspect-video w-full max-w-full md:aspect-auto md:min-h-[340px]">
+        <img src={xrNoche} alt="Skyline de Chicago de noche desde la orilla del lago, escena usada para probar la legibilidad en lentes" className="absolute inset-0 h-full w-full object-cover" />
+        <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-black/55 px-3 py-1.5 font-display text-[13px] font-medium text-white backdrop-blur-md">
+          <ScanLine size={14} /> Android XR
+        </span>
+      </div>
+      <div className="flex min-w-0 flex-col gap-4 p-6 sm:p-8">
+        <p className="font-display text-[13px] font-medium uppercase tracking-[0.12em] text-primary">Caso de estudio en Figma</p>
+        <h4 className="font-display text-[26px] font-normal leading-8 text-ink">Mira AR llevado a lentes y headsets</h4>
+        <p className="text-[15px] leading-6 text-ink2">
+          Cómo se adapta la ficha cuando la pantalla está sobre el mundo real: qué se ve de un vistazo, cómo se expande y cómo se mantiene legible de día y de noche.
+        </p>
+        <ul className="grid gap-2">
+          {temas.map((t) => (
+            <li key={t} className="flex items-start gap-2 text-[14px] text-ink">
+              <Check size={16} className="mt-0.5 shrink-0 text-primary" /> {t}
+            </li>
+          ))}
+        </ul>
+        <a href={FIGMA_XR} target="_blank" rel="noreferrer" className="mt-auto inline-flex h-11 items-center justify-center gap-2 rounded-full bg-primary px-5 font-display text-[15px] font-medium text-white">
+          Ver en Figma Community <ArrowUpRight size={16} />
+        </a>
+      </div>
+    </div>
+  )
+}
+
+const PESTANAS = [
+  { id: 'ux', nombre: 'Presentación UX' },
+  { id: 'xr', nombre: 'Caso Android XR' },
+]
+
+function Proyecto() {
+  const [pestana, setPestana] = useState('ux')
+  const mover = (e) => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return
+    const i = PESTANAS.findIndex((p) => p.id === pestana)
+    const n = PESTANAS[(i + (e.key === 'ArrowRight' ? 1 : -1) + PESTANAS.length) % PESTANAS.length]
+    setPestana(n.id)
+    document.getElementById(`pestana-${n.id}`)?.focus()
+  }
+  return (
+    <section className="grid gap-6">
+      <div className="grid gap-2">
+        <p className="font-display text-[13px] font-medium uppercase tracking-[0.12em] text-primary">El proyecto</p>
+        <h3 className="font-display text-[28px] font-normal leading-9 text-ink">Dos formas de verlo</h3>
+      </div>
+      <div role="tablist" aria-label="Material del proyecto" onKeyDown={mover} className="flex w-full max-w-full gap-1 overflow-x-auto rounded-full bg-surface2 p-1 sm:w-fit">
+        {PESTANAS.map((p) => (
+          <button
+            key={p.id}
+            id={`pestana-${p.id}`}
+            role="tab"
+            type="button"
+            aria-selected={pestana === p.id}
+            aria-controls={`panel-${p.id}`}
+            tabIndex={pestana === p.id ? 0 : -1}
+            onClick={() => setPestana(p.id)}
+            className={`h-10 flex-1 whitespace-nowrap rounded-full px-5 font-display text-[14px] font-medium transition-colors sm:flex-none ${
+              pestana === p.id ? 'bg-surface text-primary shadow-e1' : 'text-ink2 hover:text-ink'
+            }`}
+          >
+            {p.nombre}
+          </button>
+        ))}
+      </div>
+      <div id="panel-ux" role="tabpanel" aria-labelledby="pestana-ux" hidden={pestana !== 'ux'}>
+        <Carrusel />
+      </div>
+      <div id="panel-xr" role="tabpanel" aria-labelledby="pestana-xr" hidden={pestana !== 'xr'}>
+        <CasoXR />
       </div>
     </section>
   )
@@ -609,7 +689,7 @@ export default function MiraAR() {
           items={HOY}
         />
 
-        <Carrusel />
+        <Proyecto />
 
         <section className="overflow-hidden rounded-[32px] bg-surface2">
           <div className="grid gap-8 p-6 sm:p-10 md:grid-cols-[1.4fr_1fr] md:items-center">
