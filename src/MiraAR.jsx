@@ -7,6 +7,7 @@ import {
 import lugar from './assets/lugar.jpg'
 import poster from './assets/poster.jpg'
 import xrNoche from './assets/xr-noche.jpg'
+import xrNocheEn from './assets/xr-noche-en.jpg'
 
 const FIGMA_XR = 'https://www.figma.com/community/file/1698455080528285372'
 const LINKEDIN = 'https://www.linkedin.com/in/briandh5/'
@@ -424,11 +425,12 @@ function Carrusel() {
 
 // Caso de estudio para lentes Android XR, publicado en Figma Community
 function CasoXR() {
-  const x = useT().xr
+  const { idioma, t } = useContext(Idioma)
+  const x = t.xr
   return (
     <div className="grid overflow-hidden rounded-[24px] border border-line/70 bg-surface md:grid-cols-[1.25fr_1fr]">
       <div className="relative aspect-video w-full max-w-full md:aspect-auto md:min-h-[340px]">
-        <img src={xrNoche} alt={x.alt} className="absolute inset-0 h-full w-full object-cover object-right" />
+        <img src={idioma === 'en' ? xrNocheEn : xrNoche} alt={x.alt} className="absolute inset-0 h-full w-full object-cover object-right" />
         <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-black/55 px-3 py-1.5 font-display text-[13px] font-medium text-white backdrop-blur-md">
           <ScanLine size={14} /> Android XR
         </span>
