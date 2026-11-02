@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
   ArrowUpRight, Bookmark, ChevronLeft, ChevronRight, Camera, Check, Clapperboard, Clock, Globe,
-  MapPin, Minus, Navigation, Pause, Play, Plus, RotateCcw, ScanLine, Share2, Star,
+  MapPin, Minus, Navigation, Pause, Play, Plus, RotateCcw, ScanLine, Settings, Share2, Star,
   Ticket, UtensilsCrossed, X,
 } from 'lucide-react'
 import lugar from './assets/lugar.jpg'
@@ -23,59 +23,323 @@ const VUELTAS = 5
 // Fotos con licencia Unsplash (uso libre); se cargan desde unsplash.com
 const unsplash = (id) => `https://unsplash.com/photos/${id}/download?w=1200`
 
-const HOY = [
-  {
-    icon: UtensilsCrossed,
-    rubro: 'Restaurantes',
-    titulo: 'Reserva mirando la fachada',
-    texto: 'Apunta a un restaurante y ve su calificación, el tiempo de espera y los platillos más pedidos. Elige hora y personas sin salir de la cámara.',
-    puntos: ['Mesas disponibles en tiempo real', 'Menú con fotos de otros comensales', 'Confirmación en tu calendario'],
-    ar: { icon: Clock, texto: 'Mesa para 4 · 20:30', accion: 'Reservar' },
-    foto: { id: 'i8BuLYg7Ryk', autor: 'Moriah Bender', alt: 'Fachada de un restaurante con su letrero sobre la puerta' },
-  },
-  {
-    icon: Clapperboard,
-    rubro: 'Cines y eventos',
-    titulo: 'Boletos desde la marquesina',
-    texto: 'Señala un cine, un teatro o un estadio y aparecen las próximas funciones, los asientos libres y el precio. Pagas con Wallet en dos toques.',
-    puntos: ['Cartelera y horarios del día', 'Mapa de asientos en AR', 'Boletos guardados en Wallet'],
-    ar: { icon: Ticket, texto: 'Función 21:15 · Sala 4', accion: '2 boletos' },
-    foto: { id: 'P17cUmurgiQ', autor: 'David Vives', alt: 'Fachada exterior del Yankee Stadium en el Bronx, Nueva York' },
-  },
-  {
-    icon: Camera,
-    rubro: 'Fotos',
-    titulo: 'Captura y publica al instante',
-    texto: 'Toma la foto desde la misma vista. Se etiqueta con el lugar correcto y la puedes añadir a Maps o a tu álbum compartido en el momento.',
-    puntos: ['Etiqueta automática del lugar', 'Sube a reseñas de Maps', 'Álbumes compartidos con tu grupo'],
-    ar: { icon: Check, texto: 'Foto añadida a Chicago 360', accion: 'Ver' },
-    foto: { id: 'kH3RcKOgpH0', autor: 'Brady Jordan', alt: 'Mujer fotografiando el skyline de la ciudad con su teléfono al atardecer' },
-  },
+// Textos en inglés (por defecto) y español; el idioma se cambia desde el botón de ajustes
+const IDIOMAS = [
+  { id: 'en', nombre: 'English' },
+  { id: 'es', nombre: 'Español' },
 ]
 
-const PASOS = [
-  { icon: ScanLine, titulo: 'Apunta', texto: 'La cámara reconoce edificios, negocios y letreros con la información de Maps.' },
-  { icon: MapPin, titulo: 'Toca', texto: 'Aparece la ficha del lugar: horarios, reseñas, fotos y lo que puedes hacer ahí.' },
-  { icon: Check, titulo: 'Resuelve', texto: 'Reserva, compra o comparte en el mismo momento, sin cambiar de app.' },
-]
+const TXT = {
+  en: {
+    htmlTitle: 'Mira AR · An augmented reality proposal',
+    ajustes: 'Settings',
+    idioma: 'Language',
+    hoy: [
+      {
+        icon: UtensilsCrossed,
+        rubro: 'Restaurants',
+        titulo: 'Book by looking at the facade',
+        texto: 'Point at a restaurant and see its rating, wait time and most-ordered dishes. Pick a time and party size without leaving the camera.',
+        puntos: ['Real-time table availability', 'Menu with photos from other diners', 'Confirmation in your calendar'],
+        ar: { icon: Clock, texto: 'Table for 4 · 8:30 PM', accion: 'Book' },
+        foto: { id: 'i8BuLYg7Ryk', autor: 'Moriah Bender', alt: 'Restaurant facade with its sign above the door' },
+      },
+      {
+        icon: Clapperboard,
+        rubro: 'Movies and events',
+        titulo: 'Tickets from the marquee',
+        texto: 'Point at a cinema, theater or stadium to see upcoming showtimes, open seats and prices. Pay with Wallet in two taps.',
+        puntos: ['Today’s listings and showtimes', 'Seat map in AR', 'Tickets saved to Wallet'],
+        ar: { icon: Ticket, texto: 'Showing 9:15 PM · Theater 4', accion: '2 tickets' },
+        foto: { id: 'P17cUmurgiQ', autor: 'David Vives', alt: 'Exterior of Yankee Stadium in the Bronx, New York' },
+      },
+      {
+        icon: Camera,
+        rubro: 'Photos',
+        titulo: 'Capture and post instantly',
+        texto: 'Take the photo from the same view. It’s tagged with the right place, and you can add it to Maps or your shared album right away.',
+        puntos: ['Automatic place tagging', 'Upload to Maps reviews', 'Albums shared with your group'],
+        ar: { icon: Check, texto: 'Photo added to Chicago 360', accion: 'View' },
+        foto: { id: 'kH3RcKOgpH0', autor: 'Brady Jordan', alt: 'Woman photographing the city skyline with her phone at sunset' },
+      },
+    ],
+    pasos: [
+      { icon: ScanLine, titulo: 'Point', texto: 'The camera recognizes buildings, businesses and signs using Maps information.' },
+      { icon: MapPin, titulo: 'Tap', texto: 'The place card appears: hours, reviews, photos and what you can do there.' },
+      { icon: Check, titulo: 'Done', texto: 'Book, buy or share in the moment, without switching apps.' },
+    ],
+    slides: [
+      'The problem: stop spinning your phone to figure out where you are',
+      'The map is in your hand, the street is in front of you',
+      'Four moments where the map falls short',
+      'Fewer steps between seeing and understanding',
+      'The card appears on top of the building',
+      'Four user experience rules',
+      'The flow: point, tap and done',
+      'Each place decides what to show',
+      'Personalized card examples',
+      'Useful promotions, never a street full of ads',
+      'How to measure it with users',
+    ],
+    carrusel: {
+      etiqueta: 'Mira AR UX presentation',
+      rol: 'carousel',
+      intro: 'The problem of finding your way with a map and how Mira AR solves it, in 11 slides.',
+      anterior: 'Previous slide',
+      siguiente: 'Next slide',
+      irA: (n) => `Go to slide ${n}`,
+    },
+    xr: {
+      alt: 'Expanded Chicago 360 card floating next to the building in a headset, over the Chicago skyline',
+      etiqueta: 'Figma case study',
+      titulo: 'Mira AR brought to glasses and headsets',
+      texto: 'How the card adapts when the screen sits on top of the real world: what you see at a glance, how it expands and how it stays readable by day and by night.',
+      temas: ['Glance view on glasses', 'Expanded card on headset', 'Readability by day and night', 'Visual system and motion'],
+      boton: 'View on Figma Community',
+    },
+    proyecto: {
+      etiqueta: 'The project',
+      titulo: 'Two ways to see it',
+      lista: 'Project material',
+      pestanas: { ux: 'UX presentation', xr: 'Android XR case' },
+    },
+    ficha: {
+      fotoAlt: 'The selected building seen from the lakeshore',
+      reconocido: 'Recognized in AR',
+      cerrar: 'Close card',
+      tipo: 'Observation deck',
+      abierto: 'Open',
+      cierra: 'Closes at 10 PM',
+      distancia: '1.4 mi · 9 min by car',
+      llegar: 'Directions',
+      tickets: 'Buy tickets',
+      sitio: 'Website',
+      guardar: 'Save',
+      guardado: 'Saved',
+      compartir: 'Share',
+      ejemplo: 'Sample data for the demo',
+      hoy: 'Chicago 360 · Today',
+      entrada: 'General admission',
+      cadaUno: (p) => `Tickets · $${p} each`,
+      quitar: 'Remove a ticket',
+      agregar: 'Add a ticket',
+      total: 'Total',
+      moneda: (n) => `$${n}`,
+      atras: 'Back',
+      pagar: 'Pay with Wallet',
+      simulada: 'Simulated purchase, nothing is charged',
+      listos: 'Tickets ready',
+      resumen: (n) => `${n} ${n === 1 ? 'ticket' : 'tickets'} for today. You’ll see them in Wallet when you arrive.`,
+      volver: 'Back to the card',
+    },
+    hero: {
+      video: 'Video: a hand points at the Chicago skyline from the frozen lakeshore and the app recognizes the building in the center',
+      propuesta: 'A proposal for the Google ecosystem',
+      lugar: 'Chicago · Lakefront Trail',
+      titulo: 'Point at a building. Maps answers.',
+      verFicha: 'Show place card',
+      conoce: 'See the proposal',
+      reanudar: 'Resume demo',
+      pausar: 'Pause demo',
+      deNuevo: 'Watch again',
+    },
+    foto: 'Photo',
+    futuro: {
+      titulo: 'The future of augmented reality is here',
+      texto:
+        'Mira AR brings together the camera and Maps information. Point at a building, a business or a sign and a card appears with everything you can do there: book, buy tickets, get directions or share a photo. No searching, no typing and no switching apps.',
+    },
+    bloque: {
+      etiqueta: 'From day one',
+      titulo: 'What you can do just by pointing',
+      texto: 'Three actions that today require searching, opening another app and coming back. With Mira AR they happen right on the camera view.',
+    },
+    contacto: {
+      etiqueta: 'An idea for Google',
+      titulo: 'I would love to be part of the process',
+      antes: 'I’m Brian Hawkins, a computer science graduate who loves technology and data, and thinking about the right user experience. ',
+      despues:
+        ' is app #8 of my 101 apps challenge. If this concept fits the Google ecosystem, I would like to join the team working on it.',
+      sub: 'Independent proposal · 101 apps challenge',
+      linkedin: 'Message me on LinkedIn',
+      reto: 'See the 101 apps challenge',
+    },
+    pie: {
+      aviso:
+        'Independent concept created by Brian Hawkins. Not affiliated with or endorsed by Google. Google, Google Maps and Google Wallet are trademarks of Google LLC. Ratings, hours and prices shown are examples.',
+      creditos: 'Hero video: provided by Brian Hawkins. Card photos under the ',
+      licencia: 'Unsplash License',
+      autores: ': Moriah Bender, David Vives and Brady Jordan.',
+    },
+  },
+  es: {
+    htmlTitle: 'Mira AR · Propuesta de realidad aumentada',
+    ajustes: 'Ajustes',
+    idioma: 'Idioma',
+    hoy: [
+      {
+        icon: UtensilsCrossed,
+        rubro: 'Restaurantes',
+        titulo: 'Reserva mirando la fachada',
+        texto: 'Apunta a un restaurante y ve su calificación, el tiempo de espera y los platillos más pedidos. Elige hora y personas sin salir de la cámara.',
+        puntos: ['Mesas disponibles en tiempo real', 'Menú con fotos de otros comensales', 'Confirmación en tu calendario'],
+        ar: { icon: Clock, texto: 'Mesa para 4 · 20:30', accion: 'Reservar' },
+        foto: { id: 'i8BuLYg7Ryk', autor: 'Moriah Bender', alt: 'Fachada de un restaurante con su letrero sobre la puerta' },
+      },
+      {
+        icon: Clapperboard,
+        rubro: 'Cines y eventos',
+        titulo: 'Boletos desde la marquesina',
+        texto: 'Señala un cine, un teatro o un estadio y aparecen las próximas funciones, los asientos libres y el precio. Pagas con Wallet en dos toques.',
+        puntos: ['Cartelera y horarios del día', 'Mapa de asientos en AR', 'Boletos guardados en Wallet'],
+        ar: { icon: Ticket, texto: 'Función 21:15 · Sala 4', accion: '2 boletos' },
+        foto: { id: 'P17cUmurgiQ', autor: 'David Vives', alt: 'Fachada exterior del Yankee Stadium en el Bronx, Nueva York' },
+      },
+      {
+        icon: Camera,
+        rubro: 'Fotos',
+        titulo: 'Captura y publica al instante',
+        texto: 'Toma la foto desde la misma vista. Se etiqueta con el lugar correcto y la puedes añadir a Maps o a tu álbum compartido en el momento.',
+        puntos: ['Etiqueta automática del lugar', 'Sube a reseñas de Maps', 'Álbumes compartidos con tu grupo'],
+        ar: { icon: Check, texto: 'Foto añadida a Chicago 360', accion: 'Ver' },
+        foto: { id: 'kH3RcKOgpH0', autor: 'Brady Jordan', alt: 'Mujer fotografiando el skyline de la ciudad con su teléfono al atardecer' },
+      },
+    ],
+    pasos: [
+      { icon: ScanLine, titulo: 'Apunta', texto: 'La cámara reconoce edificios, negocios y letreros con la información de Maps.' },
+      { icon: MapPin, titulo: 'Toca', texto: 'Aparece la ficha del lugar: horarios, reseñas, fotos y lo que puedes hacer ahí.' },
+      { icon: Check, titulo: 'Resuelve', texto: 'Reserva, compra o comparte en el mismo momento, sin cambiar de app.' },
+    ],
+    slides: [
+      'El problema: dejar de girar el celular para saber dónde estás',
+      'El mapa está en tu mano, la calle está enfrente',
+      'Cuatro momentos donde el mapa se queda corto',
+      'Menos pasos entre ver y entender',
+      'La ficha aparece encima del edificio',
+      'Cuatro reglas de experiencia de usuario',
+      'El flujo: apunta, toca y resuelve',
+      'Cada lugar decide qué mostrar',
+      'Ejemplos de fichas personalizadas',
+      'Promociones útiles, nunca una calle llena de anuncios',
+      'Cómo medirlo con usuarios',
+    ],
+    carrusel: {
+      etiqueta: 'Presentación de UX de Mira AR',
+      rol: 'carrusel',
+      intro: 'El problema de ubicarse con el mapa y cómo lo resuelve Mira AR, en 11 slides.',
+      anterior: 'Slide anterior',
+      siguiente: 'Slide siguiente',
+      irA: (n) => `Ir a la slide ${n}`,
+    },
+    xr: {
+      alt: 'Ficha expandida de Chicago 360 flotando junto al edificio en un headset, sobre el skyline de Chicago',
+      etiqueta: 'Caso de estudio en Figma',
+      titulo: 'Mira AR llevado a lentes y headsets',
+      texto: 'Cómo se adapta la ficha cuando la pantalla está sobre el mundo real: qué se ve de un vistazo, cómo se expande y cómo se mantiene legible de día y de noche.',
+      temas: ['Vistazo en lentes', 'Ficha expandida en headset', 'Legibilidad de día y de noche', 'Sistema visual y motion'],
+      boton: 'Ver en Figma Community',
+    },
+    proyecto: {
+      etiqueta: 'El proyecto',
+      titulo: 'Dos formas de verlo',
+      lista: 'Material del proyecto',
+      pestanas: { ux: 'Presentación UX', xr: 'Caso Android XR' },
+    },
+    ficha: {
+      fotoAlt: 'Vista del edificio seleccionado desde la orilla del lago',
+      reconocido: 'Reconocido en AR',
+      cerrar: 'Cerrar ficha',
+      tipo: 'Mirador',
+      abierto: 'Abierto',
+      cierra: 'Cierra a las 22:00',
+      distancia: 'A 2.3 km · 9 min en auto',
+      llegar: 'Cómo llegar',
+      tickets: 'Comprar tickets',
+      sitio: 'Sitio web',
+      guardar: 'Guardar',
+      guardado: 'Guardado',
+      compartir: 'Compartir',
+      ejemplo: 'Datos de ejemplo para la demo',
+      hoy: 'Chicago 360 · Hoy',
+      entrada: 'Entrada general',
+      cadaUno: (p) => `Boletos · US$${p} c/u`,
+      quitar: 'Quitar un boleto',
+      agregar: 'Agregar un boleto',
+      total: 'Total',
+      moneda: (n) => `US$${n}`,
+      atras: 'Atrás',
+      pagar: 'Pagar con Wallet',
+      simulada: 'Compra simulada, no se cobra nada',
+      listos: 'Boletos listos',
+      resumen: (n) => `${n} ${n === 1 ? 'entrada' : 'entradas'} para hoy. Las verás en Wallet al llegar.`,
+      volver: 'Volver a la ficha',
+    },
+    hero: {
+      video: 'Video: una mano señala el skyline de Chicago desde la orilla congelada del lago y la app reconoce el edificio del centro',
+      propuesta: 'Propuesta para el ecosistema de Google',
+      lugar: 'Chicago · Lakefront Trail',
+      titulo: 'Señala un edificio. Maps te responde.',
+      verFicha: 'Ver ficha del lugar',
+      conoce: 'Conoce la propuesta',
+      reanudar: 'Reanudar demo',
+      pausar: 'Pausar demo',
+      deNuevo: 'Ver de nuevo',
+    },
+    foto: 'Foto',
+    futuro: {
+      titulo: 'El futuro de la realidad aumentada está aquí',
+      texto:
+        'Mira AR une la cámara con la información de Maps. Apuntas a un edificio, un negocio o un letrero y aparece una ficha con todo lo que puedes hacer ahí: reservar, comprar boletos, llegar o compartir una foto. Sin buscar, sin escribir y sin cambiar de app.',
+    },
+    bloque: {
+      etiqueta: 'Desde el primer día',
+      titulo: 'Lo que puedes hacer con solo apuntar',
+      texto: 'Tres acciones que hoy requieren buscar, abrir otra app y volver. Con Mira AR suceden sobre la vista de la cámara.',
+    },
+    contacto: {
+      etiqueta: 'Una idea para Google',
+      titulo: 'Me encantaría ser parte del proceso',
+      antes: 'Soy Brian Hawkins, licenciado en informática, y me gusta la tecnología y los datos, así como pensar en la correcta experiencia del usuario. ',
+      despues:
+        ' es la app #8 de mi reto de 101 apps. Si este concepto encaja con el ecosistema de Google, me gustaría formar parte del equipo que esté trabajando en él.',
+      sub: 'Propuesta independiente · Reto 101 apps',
+      linkedin: 'Escríbeme en LinkedIn',
+      reto: 'Ver reto 101 apps',
+    },
+    pie: {
+      aviso:
+        'Concepto independiente creado por Brian Hawkins. No está afiliado ni respaldado por Google. Google, Google Maps y Google Wallet son marcas de Google LLC. Calificaciones, horarios y precios mostrados son ejemplos.',
+      creditos: 'Video del hero: proporcionado por Brian Hawkins. Fotografías de las tarjetas bajo la ',
+      licencia: 'Licencia Unsplash',
+      autores: ': Moriah Bender, David Vives y Brady Jordan.',
+    },
+  },
+}
 
-const SLIDES = [
-  'El problema: dejar de girar el celular para saber dónde estás',
-  'El mapa está en tu mano, la calle está enfrente',
-  'Cuatro momentos donde el mapa se queda corto',
-  'Menos pasos entre ver y entender',
-  'La ficha aparece encima del edificio',
-  'Cuatro reglas de experiencia de usuario',
-  'El flujo: apunta, toca y resuelve',
-  'Cada lugar decide qué mostrar',
-  'Ejemplos de fichas personalizadas',
-  'Promociones útiles, nunca una calle llena de anuncios',
-  'Cómo medirlo con usuarios',
-].map((alt, i) => ({ src: `slides/${String(i + 1).padStart(2, '0')}.webp`, alt }))
+const Idioma = createContext({ idioma: 'en', t: TXT.en, setIdioma: () => {} })
+const useT = () => useContext(Idioma).t
+
+// Inglés por defecto; ?lang=es o la elección guardada en este navegador lo cambian
+function idiomaInicial() {
+  try {
+    const q = new URLSearchParams(location.search).get('lang')
+    if (q && TXT[q]) return q
+    const g = localStorage.getItem('mira-idioma')
+    if (g && TXT[g]) return g
+  } catch {}
+  return 'en'
+}
+
+// Las slides en inglés viven en slides/en/
+const rutaSlides = (idioma) => (idioma === 'en' ? 'slides/en/' : 'slides/')
+
 const SEG_SLIDE = 4500
 
 // Avanza solo hasta que la persona usa las flechas, los puntos o desliza
 function Carrusel() {
+  const { idioma, t } = useContext(Idioma)
+  const c = t.carrusel
+  const SLIDES = t.slides.map((alt, i) => ({ src: `${rutaSlides(idioma)}${String(i + 1).padStart(2, '0')}.webp`, alt }))
   const pista = useRef(null)
   const [actual, setActual] = useState(0)
   const [auto, setAuto] = useState(() => typeof matchMedia === 'undefined' || !matchMedia('(prefers-reduced-motion: reduce)').matches)
@@ -107,17 +371,17 @@ function Carrusel() {
   const detener = () => setAuto(false)
 
   return (
-    <div className="grid gap-4" aria-roledescription="carrusel" aria-label="Presentación de UX de Mira AR">
+    <div className="grid gap-4" aria-roledescription={c.rol} aria-label={c.etiqueta}>
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <p className="text-[15px] text-ink2">El problema de ubicarse con el mapa y cómo lo resuelve Mira AR, en 11 slides.</p>
+        <p className="text-[15px] text-ink2">{c.intro}</p>
         <div className="flex items-center gap-2">
           <span className="mr-1 font-display text-[14px] tabular-nums text-ink2">
             {actual + 1} / {total}
           </span>
-          <button type="button" onClick={() => manual(actual - 1)} aria-label="Slide anterior" className="grid h-10 w-10 place-items-center rounded-full border border-line text-ink hover:bg-surface2">
+          <button type="button" onClick={() => manual(actual - 1)} aria-label={c.anterior} className="grid h-10 w-10 place-items-center rounded-full border border-line text-ink hover:bg-surface2">
             <ChevronLeft size={20} />
           </button>
-          <button type="button" onClick={() => manual(actual + 1)} aria-label="Slide siguiente" className="grid h-10 w-10 place-items-center rounded-full border border-line text-ink hover:bg-surface2">
+          <button type="button" onClick={() => manual(actual + 1)} aria-label={c.siguiente} className="grid h-10 w-10 place-items-center rounded-full border border-line text-ink hover:bg-surface2">
             <ChevronRight size={20} />
           </button>
         </div>
@@ -148,7 +412,7 @@ function Carrusel() {
             key={s.src}
             type="button"
             onClick={() => manual(i)}
-            aria-label={`Ir a la slide ${i + 1}`}
+            aria-label={c.irA(i + 1)}
             aria-current={i === actual}
             className={`h-2 rounded-full transition-all ${i === actual ? 'w-6 bg-primary' : 'w-2 bg-line hover:bg-ink2'}`}
           />
@@ -160,42 +424,40 @@ function Carrusel() {
 
 // Caso de estudio para lentes Android XR, publicado en Figma Community
 function CasoXR() {
-  const temas = ['Vistazo en lentes', 'Ficha expandida en headset', 'Legibilidad de día y de noche', 'Sistema visual y motion']
+  const x = useT().xr
   return (
     <div className="grid overflow-hidden rounded-[24px] border border-line/70 bg-surface md:grid-cols-[1.25fr_1fr]">
       <div className="relative aspect-video w-full max-w-full md:aspect-auto md:min-h-[340px]">
-        <img src={xrNoche} alt="Ficha expandida de Chicago 360 flotando junto al edificio en un headset, sobre el skyline de Chicago" className="absolute inset-0 h-full w-full object-cover object-right" />
+        <img src={xrNoche} alt={x.alt} className="absolute inset-0 h-full w-full object-cover object-right" />
         <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-black/55 px-3 py-1.5 font-display text-[13px] font-medium text-white backdrop-blur-md">
           <ScanLine size={14} /> Android XR
         </span>
       </div>
       <div className="flex min-w-0 flex-col gap-4 p-6 sm:p-8">
-        <p className="font-display text-[13px] font-medium uppercase tracking-[0.12em] text-primary">Caso de estudio en Figma</p>
-        <h4 className="font-display text-[26px] font-normal leading-8 text-ink">Mira AR llevado a lentes y headsets</h4>
+        <p className="font-display text-[13px] font-medium uppercase tracking-[0.12em] text-primary">{x.etiqueta}</p>
+        <h4 className="font-display text-[26px] font-normal leading-8 text-ink">{x.titulo}</h4>
         <p className="text-[15px] leading-6 text-ink2">
-          Cómo se adapta la ficha cuando la pantalla está sobre el mundo real: qué se ve de un vistazo, cómo se expande y cómo se mantiene legible de día y de noche.
+          {x.texto}
         </p>
         <ul className="grid gap-2">
-          {temas.map((t) => (
+          {x.temas.map((t) => (
             <li key={t} className="flex items-start gap-2 text-[14px] text-ink">
               <Check size={16} className="mt-0.5 shrink-0 text-primary" /> {t}
             </li>
           ))}
         </ul>
         <a href={FIGMA_XR} target="_blank" rel="noreferrer" className="mt-auto inline-flex h-11 items-center justify-center gap-2 rounded-full bg-primary px-5 font-display text-[15px] font-medium text-white">
-          Ver en Figma Community <ArrowUpRight size={16} />
+          {x.boton} <ArrowUpRight size={16} />
         </a>
       </div>
     </div>
   )
 }
 
-const PESTANAS = [
-  { id: 'ux', nombre: 'Presentación UX' },
-  { id: 'xr', nombre: 'Caso Android XR' },
-]
+const PESTANAS = [{ id: 'ux' }, { id: 'xr' }]
 
 function Proyecto() {
+  const pr = useT().proyecto
   const [pestana, setPestana] = useState('ux')
   const mover = (e) => {
     if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return
@@ -207,10 +469,10 @@ function Proyecto() {
   return (
     <section className="grid gap-6">
       <div className="grid gap-2">
-        <p className="font-display text-[13px] font-medium uppercase tracking-[0.12em] text-primary">El proyecto</p>
-        <h3 className="font-display text-[28px] font-normal leading-9 text-ink">Dos formas de verlo</h3>
+        <p className="font-display text-[13px] font-medium uppercase tracking-[0.12em] text-primary">{pr.etiqueta}</p>
+        <h3 className="font-display text-[28px] font-normal leading-9 text-ink">{pr.titulo}</h3>
       </div>
-      <div role="tablist" aria-label="Material del proyecto" onKeyDown={mover} className="flex w-full max-w-full gap-1 overflow-x-auto rounded-full bg-surface2 p-1 sm:w-fit">
+      <div role="tablist" aria-label={pr.lista} onKeyDown={mover} className="flex w-full max-w-full gap-1 overflow-x-auto rounded-full bg-surface2 p-1 sm:w-fit">
         {PESTANAS.map((p) => (
           <button
             key={p.id}
@@ -225,7 +487,7 @@ function Proyecto() {
               pestana === p.id ? 'bg-surface text-primary shadow-e1' : 'text-ink2 hover:text-ink'
             }`}
           >
-            {p.nombre}
+            {pr.pestanas[p.id]}
           </button>
         ))}
       </div>
@@ -291,6 +553,7 @@ function BotonAccion({ icon: Icon, children, filled, href, onClick }) {
 }
 
 function FichaLugar({ onCerrar, onInteractuar }) {
+  const f = useT().ficha
   const [vista, setVista] = useState('info')
   const [cantidad, setCantidad] = useState(2)
   const [guardado, setGuardado] = useState(false)
@@ -304,14 +567,14 @@ function FichaLugar({ onCerrar, onInteractuar }) {
   return (
     <div className="w-full overflow-hidden rounded-[28px] bg-surface text-ink shadow-e3 font-sans">
       <div className="relative h-[108px]">
-        <img src={lugar} alt="Vista del edificio seleccionado desde la orilla del lago" className="h-full w-full object-cover" />
+        <img src={lugar} alt={f.fotoAlt} className="h-full w-full object-cover" />
         <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-[12px] font-medium text-ink font-display">
-          <ScanLine size={13} className="text-primary" /> Reconocido en AR
+          <ScanLine size={13} className="text-primary" /> {f.reconocido}
         </span>
         <button
           type="button"
           onClick={onCerrar}
-          aria-label="Cerrar ficha"
+          aria-label={f.cerrar}
           className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-white/90 text-ink hover:bg-white"
         >
           <X size={18} />
@@ -326,58 +589,58 @@ function FichaLugar({ onCerrar, onInteractuar }) {
             <Estrellas valor={4.7} />
             <span>(18,204)</span>
             <span aria-hidden="true">·</span>
-            <span>Mirador</span>
+            <span>{f.tipo}</span>
           </div>
           <p className="mt-1 text-[14px] text-ink2">
-            <span className="font-medium text-ok">Abierto</span> · Cierra a las 22:00
+            <span className="font-medium text-ok">{f.abierto}</span> · {f.cierra}
           </p>
           <p className="mt-0.5 flex items-center gap-1 text-[14px] text-ink2">
-            <Navigation size={13} /> A 2.3 km · 9 min en auto
+            <Navigation size={13} /> {f.distancia}
           </p>
           <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
             <BotonAccion icon={Navigation} filled href="https://www.google.com/maps/search/?api=1&query=360+CHICAGO">
-              Cómo llegar
+              {f.llegar}
             </BotonAccion>
-            <BotonAccion icon={Ticket} onClick={() => ir('tickets')}>Comprar tickets</BotonAccion>
-            <BotonAccion icon={Globe} href="https://360chicago.com">Sitio web</BotonAccion>
+            <BotonAccion icon={Ticket} onClick={() => ir('tickets')}>{f.tickets}</BotonAccion>
+            <BotonAccion icon={Globe} href="https://360chicago.com">{f.sitio}</BotonAccion>
             <BotonAccion icon={Bookmark} onClick={() => { onInteractuar(); setGuardado((g) => !g) }}>
-              {guardado ? 'Guardado' : 'Guardar'}
+              {guardado ? f.guardado : f.guardar}
             </BotonAccion>
-            <BotonAccion icon={Share2} onClick={onInteractuar}>Compartir</BotonAccion>
+            <BotonAccion icon={Share2} onClick={onInteractuar}>{f.compartir}</BotonAccion>
           </div>
-          <p className="mt-3 border-t border-line pt-2 text-[12px] text-ink2">Datos de ejemplo para la demo</p>
+          <p className="mt-3 border-t border-line pt-2 text-[12px] text-ink2">{f.ejemplo}</p>
         </div>
       )}
 
       {vista === 'tickets' && (
         <div className="px-4 pb-4 pt-3">
-          <p className="text-[12px] font-medium uppercase tracking-[0.08em] text-ink2">Chicago 360 · Hoy</p>
-          <h3 className="mt-0.5 font-display text-[20px] font-medium">Entrada general</h3>
+          <p className="text-[12px] font-medium uppercase tracking-[0.08em] text-ink2">{f.hoy}</p>
+          <h3 className="mt-0.5 font-display text-[20px] font-medium">{f.entrada}</h3>
           <div className="mt-3 flex items-center justify-between rounded-2xl bg-surface2 px-3 py-2">
-            <span className="text-[14px] text-ink2">Boletos · US${precio} c/u</span>
+            <span className="text-[14px] text-ink2">{f.cadaUno(precio)}</span>
             <div className="flex items-center gap-2">
-              <button type="button" aria-label="Quitar un boleto" onClick={() => setCantidad((c) => Math.max(1, c - 1))} className="grid h-8 w-8 place-items-center rounded-full bg-surface text-ink shadow-e1">
+              <button type="button" aria-label={f.quitar} onClick={() => setCantidad((c) => Math.max(1, c - 1))} className="grid h-8 w-8 place-items-center rounded-full bg-surface text-ink shadow-e1">
                 <Minus size={16} />
               </button>
               <span className="w-5 text-center font-display text-[16px] font-medium tabular-nums">{cantidad}</span>
-              <button type="button" aria-label="Agregar un boleto" onClick={() => setCantidad((c) => Math.min(8, c + 1))} className="grid h-8 w-8 place-items-center rounded-full bg-surface text-ink shadow-e1">
+              <button type="button" aria-label={f.agregar} onClick={() => setCantidad((c) => Math.min(8, c + 1))} className="grid h-8 w-8 place-items-center rounded-full bg-surface text-ink shadow-e1">
                 <Plus size={16} />
               </button>
             </div>
           </div>
           <div className="mt-3 flex items-center justify-between text-[14px]">
-            <span className="text-ink2">Total</span>
-            <span className="font-display text-[18px] font-medium tabular-nums">US${precio * cantidad}</span>
+            <span className="text-ink2">{f.total}</span>
+            <span className="font-display text-[18px] font-medium tabular-nums">{f.moneda(precio * cantidad)}</span>
           </div>
           <div className="mt-3 flex gap-2">
             <button type="button" onClick={() => setVista('info')} className="h-10 flex-1 rounded-full border border-line font-display text-[14px] font-medium text-primary">
-              Atrás
+              {f.atras}
             </button>
             <button type="button" onClick={() => setVista('listo')} className="h-10 flex-[2] rounded-full bg-primary font-display text-[14px] font-medium text-white">
-              Pagar con Wallet
+              {f.pagar}
             </button>
           </div>
-          <p className="mt-2 text-[12px] text-ink2">Compra simulada, no se cobra nada</p>
+          <p className="mt-2 text-[12px] text-ink2">{f.simulada}</p>
         </div>
       )}
 
@@ -386,12 +649,12 @@ function FichaLugar({ onCerrar, onInteractuar }) {
           <span className="mx-auto grid h-11 w-11 place-items-center rounded-full bg-tonal text-onTonal">
             <Check size={22} />
           </span>
-          <h3 className="mt-2 font-display text-[20px] font-medium">Boletos listos</h3>
+          <h3 className="mt-2 font-display text-[20px] font-medium">{f.listos}</h3>
           <p className="mt-1 text-[14px] text-ink2">
-            {cantidad} {cantidad === 1 ? 'entrada' : 'entradas'} para hoy. Las verás en Wallet al llegar.
+            {f.resumen(cantidad)}
           </p>
           <button type="button" onClick={() => setVista('info')} className="mt-3 h-10 w-full rounded-full bg-tonal font-display text-[14px] font-medium text-onTonal">
-            Volver a la ficha
+            {f.volver}
           </button>
         </div>
       )}
@@ -400,6 +663,7 @@ function FichaLugar({ onCerrar, onInteractuar }) {
 }
 
 function Hero() {
+  const hx = useT().hero
   const caja = useRef(null)
   const video = useRef(null)
   const { w, h } = useMedida(caja)
@@ -495,7 +759,7 @@ function Hero() {
         playsInline
         preload="auto"
         onEnded={alTerminar}
-        aria-label="Video: una mano señala el skyline de Chicago desde la orilla congelada del lago y la app reconoce el edificio del centro"
+        aria-label={hx.video}
       />
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(4,18,32,.55)_0%,rgba(4,18,32,0)_22%,rgba(4,18,32,0)_55%,rgba(4,18,32,.7)_100%)]" />
 
@@ -506,9 +770,12 @@ function Hero() {
           </span>
           Mira AR
         </span>
-        <span className="hidden rounded-full bg-black/30 px-3 py-1.5 font-display text-[13px] text-white/90 backdrop-blur sm:inline">
-          Propuesta para el ecosistema de Google
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="hidden rounded-full bg-black/30 px-3 py-1.5 font-display text-[13px] text-white/90 backdrop-blur sm:inline">
+            {hx.propuesta}
+          </span>
+          <Ajustes />
+        </div>
       </div>
 
       {fase === 'ficha' && w > 0 && (
@@ -541,18 +808,18 @@ function Hero() {
       {(ancho || !verFicha) && (
         <div className="gutter absolute inset-x-0 bottom-0 pb-8">
           <div className="max-w-[560px] text-white">
-            <p className="font-display text-[14px] font-medium uppercase tracking-[0.12em] text-white/80">Chicago · Lakefront Trail</p>
+            <p className="font-display text-[14px] font-medium uppercase tracking-[0.12em] text-white/80">{hx.lugar}</p>
             <h1 className="mt-2 font-display text-[clamp(30px,4.6vw,52px)] font-medium leading-[1.08]">
-              Señala un edificio. Maps te responde.
+              {hx.titulo}
             </h1>
             <div className="mt-5 flex flex-wrap gap-2">
               {cerrada && (
                 <button type="button" onClick={mostrarFicha} className="inline-flex h-10 items-center gap-2 rounded-full bg-surface px-4 font-display text-[14px] font-medium text-primary">
-                  <MapPin size={16} /> Ver ficha del lugar
+                  <MapPin size={16} /> {hx.verFicha}
                 </button>
               )}
               <a href="#futuro" className="inline-flex h-10 items-center rounded-full bg-primary px-5 font-display text-[14px] font-medium text-white">
-                Conoce la propuesta
+                {hx.conoce}
               </a>
             </div>
           </div>
@@ -561,13 +828,13 @@ function Hero() {
 
       <div className="absolute right-[max(16px,env(safe-area-inset-right,0px))] top-16 flex gap-2 min-[900px]:top-auto min-[900px]:bottom-8">
         {!terminado && (
-        <button type="button" onClick={alternarPausa} aria-label={pausado ? 'Reanudar demo' : 'Pausar demo'} className="grid h-9 w-9 place-items-center rounded-full bg-black/30 text-white backdrop-blur hover:bg-black/45">
+        <button type="button" onClick={alternarPausa} aria-label={pausado ? hx.reanudar : hx.pausar} className="grid h-9 w-9 place-items-center rounded-full bg-black/30 text-white backdrop-blur hover:bg-black/45">
           {pausado ? <Play size={16} /> : <Pause size={16} />}
         </button>
         )}
         {terminado && (
-          <button type="button" onClick={verDeNuevo} aria-label="Ver de nuevo" className="entra inline-flex h-9 items-center gap-1.5 rounded-full bg-black/40 px-3 font-display text-[13px] font-medium text-white backdrop-blur hover:bg-black/55">
-            <RotateCcw size={15} /> Ver de nuevo
+          <button type="button" onClick={verDeNuevo} aria-label={hx.deNuevo} className="entra inline-flex h-9 items-center gap-1.5 rounded-full bg-black/40 px-3 font-display text-[13px] font-medium text-white backdrop-blur hover:bg-black/55">
+            <RotateCcw size={15} /> {hx.deNuevo}
           </button>
         )}
       </div>
@@ -591,6 +858,7 @@ function Foto({ foto, icon: Icon }) {
 }
 
 function Tarjeta({ item }) {
+  const t = useT()
   const { icon: Icon, ar } = item
   const ArIcon = ar.icon
   return (
@@ -621,7 +889,7 @@ function Tarjeta({ item }) {
           ))}
         </ul>
         <p className="mt-auto pt-4 text-[12px] text-ink2">
-          Foto:{' '}
+          {t.foto}:{' '}
           <a className="underline decoration-line underline-offset-2 hover:text-primary" href={`https://unsplash.com/photos/${item.foto.id}`} target="_blank" rel="noreferrer">
             {item.foto.autor ?? 'Unsplash'}
           </a>
@@ -649,25 +917,93 @@ function Bloque({ etiqueta, titulo, texto, items }) {
   )
 }
 
-export default function MiraAR() {
+// Botón de ajustes con el selector de idioma
+function Ajustes() {
+  const { idioma, t, setIdioma } = useContext(Idioma)
+  const [abierto, setAbierto] = useState(false)
+  const caja = useRef(null)
+  useEffect(() => {
+    if (!abierto) return
+    const fuera = (e) => caja.current && !caja.current.contains(e.target) && setAbierto(false)
+    const esc = (e) => e.key === 'Escape' && setAbierto(false)
+    document.addEventListener('pointerdown', fuera)
+    document.addEventListener('keydown', esc)
+    return () => {
+      document.removeEventListener('pointerdown', fuera)
+      document.removeEventListener('keydown', esc)
+    }
+  }, [abierto])
   return (
+    <div ref={caja} className="relative">
+      <button
+        type="button"
+        onClick={() => setAbierto((a) => !a)}
+        aria-label={t.ajustes}
+        aria-expanded={abierto}
+        aria-haspopup="true"
+        className="grid h-9 w-9 place-items-center rounded-full bg-black/30 text-white backdrop-blur hover:bg-black/45"
+      >
+        <Settings size={18} />
+      </button>
+      {abierto && (
+        <div role="group" aria-label={t.idioma} className="entra absolute right-0 top-11 z-20 w-56 rounded-[20px] bg-surface p-2 text-ink shadow-e3">
+          <p className="flex items-center gap-2 px-3 pb-1 pt-2 font-display text-[12px] font-medium uppercase tracking-[0.1em] text-ink2">
+            <Globe size={14} /> {t.idioma}
+          </p>
+          {IDIOMAS.map((l) => (
+            <button
+              key={l.id}
+              type="button"
+              lang={l.id}
+              aria-pressed={idioma === l.id}
+              onClick={() => {
+                setIdioma(l.id)
+                setAbierto(false)
+              }}
+              className={`flex h-10 w-full items-center justify-between rounded-full px-3 font-display text-[15px] ${
+                idioma === l.id ? 'bg-tonal font-medium text-onTonal' : 'hover:bg-surface2'
+              }`}
+            >
+              {l.nombre}
+              {idioma === l.id && <Check size={16} />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default function MiraAR() {
+  const [idioma, setIdiomaEstado] = useState(idiomaInicial)
+  const t = TXT[idioma]
+  const setIdioma = (id) => {
+    setIdiomaEstado(id)
+    try {
+      localStorage.setItem('mira-idioma', id)
+    } catch {}
+  }
+  useEffect(() => {
+    document.documentElement.lang = idioma
+    document.title = t.htmlTitle
+  }, [idioma, t])
+  return (
+    <Idioma.Provider value={{ idioma, t, setIdioma }}>
     <div className="min-h-screen bg-surface font-sans text-ink">
       <Hero />
 
       <main id="futuro" className="gutter mx-auto grid max-w-[1160px] gap-20 pb-24 pt-20 sm:pt-28">
         <div className="grid gap-5">
           <h2 className="max-w-[16ch] font-display text-[clamp(38px,6vw,68px)] font-normal leading-[1.05] tracking-[-0.01em] text-ink">
-            El futuro de la realidad aumentada está aquí
+            {t.futuro.titulo}
           </h2>
           <p className="max-w-[60ch] text-[18px] leading-8 text-ink2">
-            Mira AR une la cámara con la información de Maps. Apuntas a un edificio, un negocio o un letrero y aparece una ficha con
-            todo lo que puedes hacer ahí: reservar, comprar boletos, llegar o compartir una foto. Sin buscar, sin escribir y sin
-            cambiar de app.
+            {t.futuro.texto}
           </p>
         </div>
 
         <ol className="grid gap-3 sm:grid-cols-3">
-          {PASOS.map(({ icon: Icon, titulo, texto }, i) => (
+          {t.pasos.map(({ icon: Icon, titulo, texto }, i) => (
             <li key={titulo} className="flex min-w-0 gap-4 rounded-[20px] bg-surface2 p-5">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-surface text-primary shadow-e1">
                 <Icon size={18} />
@@ -683,10 +1019,10 @@ export default function MiraAR() {
         </ol>
 
         <Bloque
-          etiqueta="Desde el primer día"
-          titulo="Lo que puedes hacer con solo apuntar"
-          texto="Tres acciones que hoy requieren buscar, abrir otra app y volver. Con Mira AR suceden sobre la vista de la cámara."
-          items={HOY}
+          etiqueta={t.bloque.etiqueta}
+          titulo={t.bloque.titulo}
+          texto={t.bloque.texto}
+          items={t.hoy}
         />
 
         <Proyecto />
@@ -694,24 +1030,24 @@ export default function MiraAR() {
         <section className="overflow-hidden rounded-[32px] bg-surface2">
           <div className="grid gap-8 p-6 sm:p-10 md:grid-cols-[1.4fr_1fr] md:items-center">
             <div className="min-w-0">
-              <p className="font-display text-[13px] font-medium uppercase tracking-[0.12em] text-primary">Una idea para Google</p>
+              <p className="font-display text-[13px] font-medium uppercase tracking-[0.12em] text-primary">{t.contacto.etiqueta}</p>
               <h2 className="mt-2 font-display text-[clamp(28px,4vw,40px)] font-normal leading-tight text-ink">
-                Me encantaría ser parte del proceso
+                {t.contacto.titulo}
               </h2>
               <p className="mt-4 max-w-[58ch] text-[16px] leading-7 text-ink2">
-                Soy Brian Hawkins, licenciado en informática, y me gusta la tecnología y los datos, así como pensar en la correcta
-                experiencia del usuario. <strong className="font-bold text-ink">Mira AR</strong> es la app #8 de mi reto de 101 apps. Si
-                este concepto encaja con el ecosistema de Google, me gustaría formar parte del equipo que esté trabajando en él.
+                {t.contacto.antes}
+                <strong className="font-bold text-ink">Mira AR</strong>
+                {t.contacto.despues}
               </p>
             </div>
             <div className="grid gap-3 rounded-[24px] bg-surface p-5 shadow-e1">
               <p className="font-display text-[20px] font-medium text-ink">Brian Hawkins</p>
-              <p className="-mt-2 text-[14px] text-ink2">Propuesta independiente · Reto 101 apps</p>
+              <p className="-mt-2 text-[14px] text-ink2">{t.contacto.sub}</p>
               <a href={LINKEDIN} target="_blank" rel="noreferrer" className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-primary font-display text-[15px] font-medium text-white">
-                Escríbeme en LinkedIn <ArrowUpRight size={16} />
+                {t.contacto.linkedin} <ArrowUpRight size={16} />
               </a>
               <a href={RETO} target="_blank" rel="noreferrer" className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-line font-display text-[15px] font-medium text-primary">
-                Ver reto 101 apps <ArrowUpRight size={16} />
+                {t.contacto.reto} <ArrowUpRight size={16} />
               </a>
               <p className="select-all text-center text-[13px] text-ink2">linkedin.com/in/briandh5</p>
             </div>
@@ -722,18 +1058,18 @@ export default function MiraAR() {
       <footer className="gutter border-t border-line/70 bg-surface pb-10 pt-6">
         <div className="mx-auto grid max-w-[1160px] gap-2 text-[12px] leading-5 text-ink2">
           <p>
-            Concepto independiente creado por Brian Hawkins. No está afiliado ni respaldado por Google. Google, Google Maps y Google Wallet
-            son marcas de Google LLC. Calificaciones, horarios y precios mostrados son ejemplos.
+            {t.pie.aviso}
           </p>
           <p>
-            Video del hero: proporcionado por Brian Hawkins. Fotografías de las tarjetas bajo la{' '}
+            {t.pie.creditos}
             <a className="underline underline-offset-2 hover:text-primary" href="https://unsplash.com/license" target="_blank" rel="noreferrer">
-              Licencia Unsplash
+              {t.pie.licencia}
             </a>
-            : Moriah Bender, David Vives y Brady Jordan.
+            {t.pie.autores}
           </p>
         </div>
       </footer>
     </div>
+    </Idioma.Provider>
   )
 }
